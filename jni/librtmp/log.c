@@ -31,6 +31,7 @@
 #include "rtmp_sys.h"
 #include "log.h"
 
+
 #define MAX_PRINT_LEN	2048
 #define TAG "RtmpdumpLog"
 #define printf(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__);
@@ -47,6 +48,8 @@ static const char *levels[] = {
   "CRIT", "ERROR", "WARNING", "INFO",
   "DEBUG", "DEBUG2"
 };
+
+
 
 static void rtmp_log_default(int level, const char *format, va_list vl)
 {
@@ -66,7 +69,8 @@ static void rtmp_log_default(int level, const char *format, va_list vl)
 			neednl = 0;
 		}
 		fprintf(fmsg, "%s: %s\n", levels[level], str);
-		printf(str);
+		callback_handler(str);
+		//printf(str);
 #ifdef _DEBUG
 		fflush(fmsg);
 #endif
@@ -202,7 +206,8 @@ void RTMP_LogPrintf(const char *format, ...)
     if (len > MAX_PRINT_LEN-1)
           len = MAX_PRINT_LEN-1;
 	fprintf(fmsg, "%s", str);
-	printf(str);
+	callback_handler(str);
+	//printf(str);
     if (str[len-1] == '\n')
 		fflush(fmsg);
 }

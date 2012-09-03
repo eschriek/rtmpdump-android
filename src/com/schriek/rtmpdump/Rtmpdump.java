@@ -9,7 +9,6 @@ public class Rtmpdump {
 	private final String tag = "Rtmpdump";
 
 	public Rtmpdump() {
-		new Parser(getClass());
 		LoadLib();
 	}
 
@@ -23,7 +22,6 @@ public class Rtmpdump {
 		run(new String[] { "rtmpdump", "-h" });
 	}
 
-	@Native(enabled = true)
 	protected void LoadLib() {
 
 		try {
@@ -33,7 +31,7 @@ public class Rtmpdump {
 			Log.e(tag, e.getMessage());
 		}
 	}
-
+	
 	private native void testNative();
 
 	public native void run(String[] args);

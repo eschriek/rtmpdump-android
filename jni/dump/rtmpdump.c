@@ -27,12 +27,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <jni.h>
+#include <stdbool.h>
 
 #include <signal.h>		// to catch Ctrl-C
 #include <getopt.h>
 
 #include "librtmp/rtmp_sys.h"
 #include "librtmp/log.h"
+#include "rtmpdump.h"
 
 #ifdef WIN32
 #define fseeko fseeko64
@@ -90,50 +92,91 @@ uint32_t nIgnoredFrameCounter = 0;
 #define MAX_IGNORED_FRAMES	50
 
 FILE *file = 0;
+//static void callback_handler(char *s);
 
 //int main(int argc, char **argv);
 
 static JavaVM *sVm;
+static jobject clazz;
 
-static void callback_handler(char *s) {
-int status;
-JNIEnv *env;
-bool isAttached = false;
-status = sVm->GetEnv((void **) &env, JNI_VERSION_1_4);
-if(status < 0) {
-LOGE("callback_handler: failed to get JNI environment, "
-"assuming native thread");
-status = gJavaVM->AttachCurrentThread(&env, NULL);
-if(status < 0) {
-LOGE("callback_handler: failed to attach "
-"current thread");
-return;
+void initClassHelper(JNIEnv *env, const char *path, jobject *objptr) {
+	jclass cls = (*env)->FindClass(env, path);
+	if (!cls) {
+		LOGE("initClassHelper: failed to get %s class reference", path);
+		return;
+	}
+	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "()V");
+	if (!constr) {
+		LOGE("initClassHelper: failed to get %s constructor", path);
+		return;
+	}
+	jobject obj = (*env)->NewObject(env, cls, constr);
+	if (!obj) {
+		LOGE("initClassHelper: failed to create a %s object", path);
+		return;
+	}
+	(*objptr) = (*env)->NewGlobalRef(env, obj);
 }
-isAttached = true;
-}
-/* Construct a Java string */
-jstring js = env->NewStringUTF(s);
-jclass interfaceClass = env->FindClass("com/schriek/rtmpdump/callBack");
-if(!interfaceClass) {
-LOGE("callback_handler: failed to get class reference");
-if(isAttached) gJavaVM->DetachCurrentThread();
-return;
-}
-/* Find the callBack method ID */
-jmethodID method = env->GetStaticMethodID(
-interfaceClass, "callBack", "(Ljava/lang/String;)V");
-if(!method) {
-LOGE("callback_handler: failed to get method ID");
-if(isAttached) gJavaVM->DetachCurrentThread();
-return;
-}
-env->CallStaticVoidMethod(interfaceClass, method, js);
-if(isAttached) gJavaVM->DetachCurrentThread();
+
+void callback_handler(char *s) {
+	int status;
+	JNIEnv *env;
+	bool isAttached = false;
+	status = (*sVm)->GetEnv(sVm, (void **) &env, JNI_VERSION_1_4);
+	if (status < 0) {
+		LOGE("callback_handler: failed to get JNI environment, "
+		"assuming native thread");
+		status = (*sVm)->AttachCurrentThread(sVm, &env, NULL);
+		if (status < 0) {
+			LOGE("callback_handler: failed to attach "
+			"current thread");
+			return;
+		}
+		isAttached = true;
+	}
+
+	/* Construct a Java string */
+	jstring js = (*env)->NewStringUTF(env, s);
+	if (!js) {
+		LOGE("String is leeg");
+	}
+	jclass interfaceClass = (*env)->GetObjectClass(env, clazz);
+	if (interfaceClass == NULL) {
+		LOGE("callback_handler: failed to get class reference");
+		if (isAttached)
+			(*sVm)->DetachCurrentThread(sVm);
+		return;
+	}
+	//Ljava/lang/String;
+	/* Find the callBack method ID */
+	jmethodID method = (*env)->GetStaticMethodID(env, interfaceClass, "testCallback",
+			"(Ljava/lang/String;)V");
+	if (!method) {
+		LOGE("callback_handler: failed to get method ID");
+		if (isAttached)
+			(*sVm)->DetachCurrentThread(sVm);
+		return;
+	}
+
+	(*env)->CallStaticVoidMethod(env, interfaceClass, method, js);
+
+	if (isAttached)
+		(*sVm)->DetachCurrentThread(sVm);
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
+	const char * path = "com/schriek/rtmpdump/callBack";
 	LOGV("Loading native library compiled at " __TIME__ " " __DATE__);
 	sVm = jvm;
+	JNIEnv *env;
+
+	if ((*jvm)->GetEnv(jvm, (void**) &env, JNI_VERSION_1_4) != JNI_OK) {
+		LOGE("Failed to get the environment using GetEnv()");
+		return -1;
+	}
+
+	initClassHelper(env, path, &clazz);
+
 	return JNI_VERSION_1_4;
 }
 
@@ -161,7 +204,9 @@ main(argc, argv);
 
 void Java_com_schriek_rtmpdump_Rtmpdump_testNative(JNIEnv* env,
 	jobject javaThis) {
+
 LOGV("testNative() called!");
+callback_handler("Loading native library compiled at " __TIME__ " " __DATE__);
 }
 
 void Java_com_schriek_rtmpdump_Rtmpdump_stop(JNIEnv* env, jobject javaThis) {
@@ -170,6 +215,7 @@ exit(0);
 }
 
 void sigIntHandler(int sig) {
+
 RTMP_ctrlC = TRUE;
 RTMP_LogPrintf("Caught signal: %d, cleaning up, just a second...\n", sig);
 // ignore all these signals now and let the connection close
@@ -180,6 +226,7 @@ signal(SIGHUP, SIG_IGN);
 signal(SIGPIPE, SIG_IGN);
 signal(SIGQUIT, SIG_IGN);
 #endif
+
 }
 
 #define HEX2BIN(a)      (((a)&0x40)?((a)&0xf)+9:((a)&0xf))

@@ -1,32 +1,37 @@
 package com.schriek.rtmpdump;
 
-import java.util.List;
+import java.util.Vector;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class ListAdapter extends BaseAdapter {
+public class AppendingAdapter extends BaseAdapter {
 
 	private Context mContext;
-	private String[] items;
+	private Vector<String> items = new Vector<String>();
 
-	public ListAdapter(Context con, String[] items) {
+	public void add(String s) {
+		items.add(s);
+
+	}
+
+	public AppendingAdapter(Context con) {
 		mContext = con;
-		this.items = items;
 	}
 
 	public int getCount() {
 		// TODO Auto-generated method stub
-		return items.length;
+		return items.size();
 	}
 
 	public Object getItem(int position) {
 		// TODO Auto-generated method stub
-		return items[position];
+		return items.get(position);
 	}
 
 	public long getItemId(int position) {
@@ -38,8 +43,9 @@ public class ListAdapter extends BaseAdapter {
 		// TODO Auto-generated method stub
 
 		TextView text = new TextView(mContext);
-		text.setText(items[position]);
-		
+		text.setTextColor(Color.BLACK);
+		text.setText(items.get(position));
+
 		return text;
 	}
 

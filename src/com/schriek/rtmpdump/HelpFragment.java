@@ -12,7 +12,7 @@ import android.widget.ListView;
 public class HelpFragment extends Fragment {
 
 	private ListView list;
-
+	
 	private static String[] usage = {
 			"--help|-h               Prints this help screen.\n",
 			"--rtmp|-r url           URL (e.g. rtmp://host[:port]/path)\n",

@@ -21,6 +21,7 @@ LOCAL_CFLAGS := -DRTMPDUMP_VERSION=\"v2.4\"
 LOCAL_LDLIBS := -llog
 LOCAL_SRC_FILES := dump/rtmpdump.c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../librtmp
+LOCAL_C_INCLUDES += dump/rtmpdump.h
 
 LOCAL_STATIC_LIBRARIES := librtmp
 
