@@ -790,6 +790,9 @@ RTMP_LogPrintf("packet.\n\n");
 int main(int argc, char **argv) {
 LOGV("Main()");
 extern char *optarg;
+extern int optind;
+//reset optind counter
+optind=1;
 
 int nStatus = RD_SUCCESS;
 double percent = 0;
@@ -1352,8 +1355,10 @@ if (nStatus == RD_SUCCESS) {
 clean: RTMP_Log(RTMP_LOGDEBUG, "Closing connection.\n");
 RTMP_Close(&rtmp);
 
-if (file != 0)
+if (file != 0){
 	fclose(file);
+	file = 0;
+}
 
 CleanupSockets();
 
