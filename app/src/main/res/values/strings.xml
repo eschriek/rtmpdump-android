@@ -1,0 +1,10 @@
+<resources>
+
+    <string name="app_name">rtmpdump</string>
+    <string name="title_section2">Help</string>
+    <string name="title_section1">Command</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+
+</resources>
